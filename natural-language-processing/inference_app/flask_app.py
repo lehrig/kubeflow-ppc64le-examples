@@ -26,7 +26,7 @@ nlp = spacy.load("en_core_web_sm")
 def run_inference():
     question = request.json["question"]
     context = wikipedia.summary(nlp(question).ents[0].text)
-    inputs = tokenizer(question, get_wiki_context(question), 
+    inputs = tokenizer(question, context,
             return_tensors="np", truncation=True)
 
     outputs = session.run(
