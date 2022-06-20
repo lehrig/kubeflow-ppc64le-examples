@@ -21,6 +21,10 @@ session = InferenceSession(
 nlp = spacy.load("en_core_web_sm")
 
 
+def get_wikipedia_context(entity):
+    return wikipedia.summary(wikipedia.search(entity, results=1), auto_suggest=False)
+
+
 class Data(BaseModel):
     question: str
     backend: str
@@ -28,7 +32,7 @@ class Data(BaseModel):
 @app.post("/")
 async def run_inference(data: Data):
     doc = nlp(data.question)
-    context = wikipedia.summary(doc.ents[0].text)
+    context = get_wikipedia_context(doc.ents[0].text)
     inputs = dict(tokenizer(data.question, context,
             return_tensors="np", truncation=True))
 

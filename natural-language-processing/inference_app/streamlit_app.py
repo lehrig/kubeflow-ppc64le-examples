@@ -14,20 +14,18 @@ def answer():
     st.session_state.question = st.session_state.user_input
     st.session_state.answer = requests.post(
             "http://localhost:5000/", 
-            json={
-                "question": st.session_state.question,
-                "backend": backend
-            }).json()
+            json={"question": st.session_state.question, "backend": backend}).json()
 
     # reset question field
     st.session_state.user_input = ""
 
 
 with st.sidebar:
-    # st.image("https://upload.wikimedia.org/wikipedia/en/2/21/Kubeflow-logo.png", width=200)
     # TODO check if they work? Ping or dummy request?
     backend = st.selectbox("Backend server to use:",
             ["TorchServe", "TFServing", "Triton Inference Server"])
+
+    logs_required = st.checkbox("Show logs")
 
 
 
@@ -44,7 +42,7 @@ with left_column:
         st.write(st.session_state.question)
         st.write(st.session_state.answer["answer"])
 
-if st.checkbox("Show logs"):
+if logs_required:
     st.json(st.session_state.answer)
 
 
@@ -53,6 +51,12 @@ with right_column:
     examples = [
         "Where did Neil Armstrong study?",
         "When was Nelson Mandela born?",
+        "Who founded Coca-Cola?",
+        "When did Steve Jobs create Apple?",
+        "When did Steve Jobs create his company?",
+        "Which Nobel Prize did Mandela won?",
+        "Why did Mandela go to prison?",
+        "Where are the headquarters of the United Nations?",
     ]
 
     def set_question(example_id):
