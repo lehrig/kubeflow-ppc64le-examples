@@ -21,3 +21,17 @@ conda create -n opence \
 	transformers=4.18.0 \
 	onnxruntime=1.11.0
 ```
+
+### Start the inference app
+
+* StreamLit web interface:
+
+```
+streamlit run inference_app/streamlit_app.py
+```
+
+* FastAPI inference engine:
+
+```
+python3 inference_app/fastapi_app.py
+```
