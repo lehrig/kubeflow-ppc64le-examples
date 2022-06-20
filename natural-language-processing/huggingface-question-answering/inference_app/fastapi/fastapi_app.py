@@ -16,7 +16,7 @@ app = FastAPI()
 
 tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 session = InferenceSession(
-        "../onnx/checkpoint-2739/model.onnx",
+        "../../training/onnx/checkpoint-2739/model.onnx",
         providers=["CPUExecutionProvider"])
 nlp = spacy.load("en_core_web_sm")
 
