@@ -39,7 +39,7 @@ class Data(BaseModel):
     backend: str
 
 @app.post("/")
-async def run_inference(data: Data):
+async def predict(data: Data):
     doc = nlp(data.question)
     context = get_wikipedia_context(doc.ents[0].text)
     inputs = dict(tokenizer(data.question, context,
