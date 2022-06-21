@@ -21,6 +21,19 @@ def get_wikipedia_context(entity):
     return wikipedia.summary(wikipedia.search(entity, results=1), auto_suggest=False)
 
 
+def run_inference(inputs, backend):
+    if backend == "TorchServe":
+        pass
+    elif backend == "TFServing":
+        pass
+    elif backend == "Triton Inference Server":
+        pass
+    else:
+        raise ValueError(f"Backend '{backend}' not supported.")
+
+    return (0, 0)
+
+
 class Data(BaseModel):
     question: str
     backend: str
@@ -33,9 +46,7 @@ async def run_inference(data: Data):
             return_tensors="np", truncation=True))
 
     start_time = time()
-    # outputs = session.run(
-    #         output_names=["start_logits", "end_logits"],
-    #         input_feed=inputs)
+    outputs = run_inference(inputs, data.backend)
     inference_time = time() - start_time
 
     return {
