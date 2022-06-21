@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import uvicorn
 
 from transformers import AutoTokenizer
+from onnxruntime import InferenceSession
 from numpy import argmax
 from time import time
 import spacy
@@ -14,6 +15,9 @@ import wikipedia
 app = FastAPI()
 
 tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+session = InferenceSession(
+        "../../training/onnx/checkpoint-2739/model.onnx",
+        providers=["CPUExecutionProvider"])
 nlp = spacy.load("en_core_web_sm")
 
 
@@ -33,9 +37,9 @@ async def run_inference(data: Data):
             return_tensors="np", truncation=True))
 
     start_time = time()
-    # outputs = session.run(
-    #         output_names=["start_logits", "end_logits"],
-    #         input_feed=inputs)
+    outputs = session.run(
+            output_names=["start_logits", "end_logits"],
+            input_feed=inputs)
     inference_time = time() - start_time
 
     return {
