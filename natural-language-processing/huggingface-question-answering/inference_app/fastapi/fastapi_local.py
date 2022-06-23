@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import uvicorn
 
 from transformers import AutoTokenizer
+from onnxruntime import InferenceSession
 from numpy import argmax
 from time import time
 import spacy
@@ -14,6 +15,9 @@ import wikipedia
 app = FastAPI()
 
 tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+session = InferenceSession(
+        "../../training/onnx/checkpoint-2739/model.onnx",
+        providers=["CPUExecutionProvider"])
 nlp = spacy.load("en_core_web_sm")
 
 
@@ -21,32 +25,21 @@ def get_wikipedia_context(entity):
     return wikipedia.summary(wikipedia.search(entity, results=1), auto_suggest=False)
 
 
-def run_inference(inputs, backend):
-    if backend == "TorchServe":
-        pass
-    elif backend == "TFServing":
-        pass
-    elif backend == "Triton Inference Server":
-        pass
-    else:
-        raise ValueError(f"Backend '{backend}' not supported.")
-
-    return (0, 0)
-
-
 class Data(BaseModel):
     question: str
     backend: str
 
 @app.post("/")
-async def predict(data: Data):
+async def run_inference(data: Data):
     doc = nlp(data.question)
     context = get_wikipedia_context(doc.ents[0].text)
     inputs = dict(tokenizer(data.question, context,
             return_tensors="np", truncation=True))
 
     start_time = time()
-    outputs = run_inference(inputs, data.backend)
+    outputs = session.run(
+            output_names=["start_logits", "end_logits"],
+            input_feed=inputs)
     inference_time = time() - start_time
 
     return {
