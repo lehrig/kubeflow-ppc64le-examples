@@ -24,14 +24,10 @@ implementation:
 
           from transformers import AutoTokenizer
           from datasets.load import load_from_disk
-          from datasets import load_dataset
-          import pickle
           import os
 
           tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
-          # with open(dataset_dir + "/dataset.pkl", "rb") as f:
-          #     squad = pickle.load(f)
           squad = load_from_disk(dataset_dir)
 
           def preprocess_function(examples):

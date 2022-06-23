@@ -2,7 +2,7 @@ name: Train
 inputs:
 - {name: preprocess_dir, type: String}
 outputs:
-- {name: model_dir, type: String}
+- {name: model, type: String}
 - {name: checkpoint_dir, type: String}
 implementation:
   container:
@@ -21,20 +21,21 @@ implementation:
           return file_path
 
       def train(preprocess_dir,
-                model_dir,
+                # model_dir: comp.OutputPath(str),
+                model_path,
                 checkpoint_dir):
 
           import os
           from datasets import load_from_disk
+          import pickle
           from transformers import AutoTokenizer, DefaultDataCollator, \
               AutoModelForQuestionAnswering, TrainingArguments, Trainer
-          from transformers.integrations import TensorBoardCallback
 
           tokenized_squad = load_from_disk(preprocess_dir)
 
           data_collator = DefaultDataCollator()
 
-          tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased", torchscript=True)
+          tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
           model = AutoModelForQuestionAnswering.from_pretrained("distilbert-base-uncased")
 
@@ -61,9 +62,9 @@ implementation:
               data_collator=data_collator,
           )
 
-          trainer.add_callback(TensorBoardCallback())
           trainer.train()
 
+          model_dir = os.path.dirname(model_path)
           if not os.path.exists(model_dir):
               os.makedirs(model_dir)
 
@@ -72,7 +73,7 @@ implementation:
       import argparse
       _parser = argparse.ArgumentParser(prog='Train', description='')
       _parser.add_argument("--preprocess-dir", dest="preprocess_dir", type=str, required=True, default=argparse.SUPPRESS)
-      _parser.add_argument("--model-dir", dest="model_dir", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
+      _parser.add_argument("--model", dest="model_path", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
       _parser.add_argument("--checkpoint-dir", dest="checkpoint_dir", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
       _parsed_args = vars(_parser.parse_args())
 
@@ -80,7 +81,7 @@ implementation:
     args:
     - --preprocess-dir
     - {inputPath: preprocess_dir}
-    - --model-dir
-    - {outputPath: model_dir}
+    - --model
+    - {outputPath: model}
     - --checkpoint-dir
     - {outputPath: checkpoint_dir}
