@@ -5,11 +5,21 @@ from fastapi import FastAPI, Request
 from pydantic import BaseModel
 import uvicorn
 
+import os
+import json
+import requests
 from transformers import AutoTokenizer
 from numpy import argmax
 from time import time
 import spacy
 import wikipedia
+
+
+try:
+    TRITON_ENDPOINT = os.environ["TRITON_ENDPOINT"]
+except KeyError as e:
+    raise KeyError(f"Environment variable {e} is required.")
+
 
 app = FastAPI()
 
@@ -27,11 +37,26 @@ def run_inference(inputs, backend):
     elif backend == "TFServing":
         pass
     elif backend == "Triton Inference Server":
-        pass
-    else:
-        raise ValueError(f"Backend '{backend}' not supported.")
+        payload = {
+            "inputs": [
+                {
+                    "name": "attention_mask",
+                    "shape": inputs["attention_mask"].shape,
+                    "datatype": "INT64",
+                    "data": inputs["attention_mask"].tolist()
+                }, {
+                    "name": "input_ids",
+                    "shape": inputs["input_ids"].shape,
+                    "datatype": "INT64",
+                    "data": inputs["input_ids"].tolist()
+                }
+            ]
+        }
 
-    return (0, 0)
+        response = requests.post(TRITON_ENDPOINT, data=json.dumps(payload)).json()
+        return {ent["name"]: argmax(ent["data"]) for ent in response["outputs"]}
+
+    raise ValueError(f"Backend '{backend}' not supported.")
 
 
 class Data(BaseModel):
@@ -50,7 +75,7 @@ async def predict(data: Data):
     inference_time = time() - start_time
 
     return {
-        "answer": tokenizer.decode(inputs["input_ids"][0,argmax(outputs[0]):argmax(outputs[1])+1]),
+        "answer": tokenizer.decode(inputs["input_ids"][0, outputs["start_logits"]:outputs["end_logits"]+1]),
         "backend": data.backend,
         "inference_time": inference_time,
         "shape_input_ids": inputs["input_ids"].shape,
@@ -63,5 +88,4 @@ async def predict(data: Data):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)
-
 
