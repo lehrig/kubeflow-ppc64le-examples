@@ -21,8 +21,12 @@ implementation:
           from datasets import load_dataset
           import os
           squad = load_dataset("squad")
+          print(type(dataset_dir))
           if not os.path.exists(dataset_dir):
               os.makedirs(dataset_dir)
+
+          # with open(dataset_dir + "/dataset.pkl", "wb") as f:
+          #     pickle.dump(squad, f)
           squad.save_to_disk(dataset_dir)
 
       import argparse

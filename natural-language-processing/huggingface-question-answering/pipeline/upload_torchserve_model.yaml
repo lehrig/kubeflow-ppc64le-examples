@@ -1,0 +1,49 @@
+name: Upload torchserve model
+inputs:
+- {name: model_dir, type: String}
+outputs:
+- {name: pt, type: String}
+implementation:
+  container:
+    image: quay.io/jeremie_ch/transformers-component:gpu
+    command:
+    - sh
+    - -ec
+    - |
+      program_path=$(mktemp)
+      printf "%s" "$0" > "$program_path"
+      python3 -u "$program_path" "$@"
+    - |
+      def _make_parent_dirs_and_return_path(file_path: str):
+          import os
+          os.makedirs(os.path.dirname(file_path), exist_ok=True)
+          return file_path
+
+      def upload_torchserve_model(model_dir,
+                                  pt_path):
+          from transformers import AutoModelForQuestionAnswering, AutoTokenizer
+          import torch
+
+          model = AutoModelForQuestionAnswering.from_pretrained(model_dir)
+
+          tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased", torchscript=True)
+          context = "Architecturally, the school has a Catholic character. Atop the Main Building\"s gold dome is a golden statue of the Virgin Mary. Immediately in front of the Main Building and facing it, is a copper statue of Christ with arms upraised with the legend \"Venite Ad Me Omnes\". Next to the Main Building is the Basilica of the Sacred Heart. Immediately behind the basilica is the Grotto, a Marian place of prayer and reflection. It is a replica of the grotto at Lourdes, France where the Virgin Mary reputedly appeared to Saint Bernadette Soubirous in 1858. At the end of the main drive (and in a direct line that connects through 3 statues and the Gold Dome), is a simple, modern stone statue of Mary."
+          question = "To whom did the Virgin Mary allegedly appear in 1858 in Lourdes France?"
+          model.eval()
+          model.to("cpu")
+          inputs = tuple(dict(tokenizer(question, context, return_tensors="pt")).values())
+          traced_model = torch.jit.trace(model, inputs, strict=False)
+          torch.jit.save(traced_model, pt_path)
+
+      import argparse
+      _parser = argparse.ArgumentParser(prog='Upload torchserve model', description='')
+      _parser.add_argument("--model-dir", dest="model_dir", type=str, required=True, default=argparse.SUPPRESS)
+      _parser.add_argument("--pt", dest="pt_path", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
+      _parsed_args = vars(_parser.parse_args())
+
+      _outputs = upload_torchserve_model(**_parsed_args)
+    args:
+    - --model-dir
+    - {inputPath: model_dir}
+    - --pt
+    - {outputPath: pt}
