@@ -54,9 +54,13 @@ def run_inference(inputs, backend):
         }
 
         response = requests.post(TRITON_ENDPOINT, data=json.dumps(payload)).json()
-        return {ent["name"]: argmax(ent["data"]) for ent in response["outputs"]}
+        return {
+            "status": "success",
+            "answer": {ent["name"]: argmax(ent["data"]) for ent in response["outputs"]}
+        }
 
-    raise ValueError(f"Backend '{backend}' not supported.")
+    raise NotImplementedError(f"Backend '{backend}' not supported.")
+
 
 
 class Data(BaseModel):
@@ -70,20 +74,28 @@ async def predict(data: Data):
     inputs = dict(tokenizer(data.question, context,
             return_tensors="np", truncation=True))
 
-    start_time = time()
-    outputs = run_inference(inputs, data.backend)
-    inference_time = time() - start_time
+    try:
+        start_time = time()
+        outputs = run_inference(inputs, data.backend)
+        inference_time = time() - start_time
 
-    return {
-        "answer": tokenizer.decode(inputs["input_ids"][0, outputs["start_logits"]:outputs["end_logits"]+1]),
-        "backend": data.backend,
-        "inference_time": inference_time,
-        "shape_input_ids": inputs["input_ids"].shape,
-        "shape_attention_mask": inputs["attention_mask"].shape,
-        "context": context,
-        "question": data.question,
-        "entities": [(ent.text, ent.label_) for ent in doc.ents]
-    }
+        return {
+            "status": "success",
+            "message": "",
+            "answer": tokenizer.decode(inputs["input_ids"][0, outputs["start_logits"]:outputs["end_logits"]+1]),
+            "backend": data.backend,
+            "inference_time": inference_time,
+            "shape_input_ids": inputs["input_ids"].shape,
+            "shape_attention_mask": inputs["attention_mask"].shape,
+            "context": context,
+            "question": data.question,
+            "entities": [(ent.text, ent.label_) for ent in doc.ents]
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": repr(e)
+        }
 
 
 if __name__ == "__main__":
