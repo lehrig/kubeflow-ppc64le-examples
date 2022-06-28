@@ -49,8 +49,12 @@ with left_column:
 
     # display results (only when answer exists, so after the first run)
     if "answer" in st.session_state:
-        st.markdown(utils.user_component % st.session_state.question, unsafe_allow_html=True)
-        st.markdown(utils.bot_component % st.session_state.answer["answer"], unsafe_allow_html=True)
+        if st.session_state.answer["status"] == "success":
+            st.markdown(utils.user_component % st.session_state.question, unsafe_allow_html=True)
+            st.markdown(utils.bot_component % st.session_state.answer["answer"], unsafe_allow_html=True)
+            st.info(f"Inference time: {st.session_state.answer['inference_time']}")
+        else:
+            st.error(st.session_state.answer["message"])
 
 st.markdown("***")
 if logs_required and "answer" in st.session_state:
