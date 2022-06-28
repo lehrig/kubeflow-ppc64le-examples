@@ -28,7 +28,10 @@ nlp = spacy.load("en_core_web_sm")
 
 
 def get_wikipedia_context(entity):
-    return wikipedia.summary(wikipedia.search(entity, results=1), auto_suggest=False)
+    try:
+        return wikipedia.summary(wikipedia.search(entity, results=1), auto_suggest=False)
+    except wikipedia.exceptions.DisambiguationError as e:
+        return wikipedia.summary(e.options[0], auto_suggest=False)
 
 
 def run_inference(inputs, backend):
@@ -69,12 +72,15 @@ class Data(BaseModel):
 
 @app.post("/")
 async def predict(data: Data):
-    doc = nlp(data.question)
-    context = get_wikipedia_context(doc.ents[0].text)
-    inputs = dict(tokenizer(data.question, context,
-            return_tensors="np", truncation=True))
-
     try:
+        doc = nlp(data.question)
+        if len(doc.ents) == 0:
+            raise ValueError("Spacy did not find any entity in the question '{data.question}'.")
+
+        context = get_wikipedia_context(doc.ents[0].text)
+        inputs = dict(tokenizer(data.question, context,
+                return_tensors="np", truncation=True))
+
         start_time = time()
         outputs = run_inference(inputs, data.backend)
         inference_time = time() - start_time
