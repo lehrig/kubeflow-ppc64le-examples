@@ -15,13 +15,22 @@ from time import time
 import spacy
 import wikipedia
 
+def get_env(field, default=None):
+    return os.environ[field] if field in os.environ else default
 
-try:
-    TRITON_ENDPOINT = os.environ["TRITON_ENDPOINT"]
-except KeyError as e:
-    raise KeyError(f"Environment variable {e} is required.")
+ENDPOINTS = {
+    "Triton Inference Server": {
+        "model":  get_env("TRITON_MODEL_ENDPOINT",  "http://localhost:8000/v2/models/question-answering/infer")
+        "status": get_env("TRITON_STATUS_ENDPOINT", "localhost:8000/v2/health/ready")
+    }, {
+    "TorchServe": {
+        "model":  None,
+        "status": None
+    "TFServing": {
+        "model":  None,
+        "status": None
 
-
+    
 app = FastAPI()
 
 tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
@@ -57,7 +66,7 @@ def run_inference(inputs, backend):
             ]
         }
 
-        response = requests.post(TRITON_ENDPOINT, data=json.dumps(payload)).json()
+        response = requests.post(ENDPOINTS[backend]["model"], data=json.dumps(payload)).json()
         return {
             "status": "success",
             "answer": {ent["name"]: argmax(ent["data"]) for ent in response["outputs"]}
@@ -109,8 +118,17 @@ class BackendList(BaseModel):
     backends: List[str]
 
 @app.post("/status")
-def check_backends_status(backendlist: BackendList):
-    return {b: "KO" for b in backendlist.backends}
+def check_backends_status(backends_list: BackendList):
+    results = {}
+    for b in backends_list.backends:
+        try:
+            assert(requests.get(ENDPOINTS[b]["status"]).status_code == 200)
+            results[b] = "OK"
+        except:
+            results[b] = "KO"
+    return results
+
+    # return {b: "KO" for b in backends_list.backends}
 
 
 if __name__ == "__main__":
