@@ -23,9 +23,9 @@ spec:
       - name: fastapi
         image: quay.io/mdeloche/kubeflow-fastapi:1.0
         imagePullPolicy: Always
-        env:
-        - name: TRITON_ENDPOINT
-          value: "http://localhost:8000/v2/models/question-answering/infer"
+        # env:
+        # - name: TRITON_ENDPOINT
+        #   value: "http://localhost:8000/v2/models/question-answering/infer"
 ---
 apiVersion: v1
 kind: Service

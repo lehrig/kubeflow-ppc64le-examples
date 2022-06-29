@@ -17,18 +17,20 @@ import wikipedia
 
 def get_env(field, default=None):
     return os.environ[field] if field in os.environ else default
-
 ENDPOINTS = {
     "Triton Inference Server": {
-        "model":  get_env("TRITON_MODEL_ENDPOINT",  "http://localhost:8000/v2/models/question-answering/infer")
+        "model":  get_env("TRITON_MODEL_ENDPOINT",  "http://localhost:8000/v2/models/question-answering/infer"),
         "status": get_env("TRITON_STATUS_ENDPOINT", "localhost:8000/v2/health/ready")
-    }, {
+    },
     "TorchServe": {
         "model":  None,
         "status": None
+    },
     "TFServing": {
         "model":  None,
         "status": None
+    }
+}
 
     
 app = FastAPI()
@@ -123,9 +125,9 @@ def check_backends_status(backends_list: BackendList):
     for b in backends_list.backends:
         try:
             assert(requests.get(ENDPOINTS[b]["status"]).status_code == 200)
-            results[b] = "OK"
+            results[b] = "✅"
         except:
-            results[b] = "KO"
+            results[b] = "❌"
     return results
 
     # return {b: "KO" for b in backends_list.backends}
@@ -133,4 +135,3 @@ def check_backends_status(backends_list: BackendList):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)
-
