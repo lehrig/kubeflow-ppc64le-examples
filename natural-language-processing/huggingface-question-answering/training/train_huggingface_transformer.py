@@ -2,11 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import torch
+from datetime import datetime
 from datasets import load_dataset
 from transformers import AutoTokenizer, DefaultDataCollator, \
         AutoModelForQuestionAnswering, TrainingArguments, Trainer
-
 import transformers.onnx
+
+import runpy
+import sys
+
+model_id = "model_" + datetime.now().strftime("%Y-%m-%d_%H-%M")
 
 squad = load_dataset("squad")
 
@@ -67,12 +72,12 @@ tokenized_squad = squad.map(preprocess_function, batched=True, remove_columns=sq
 
 data_collator = DefaultDataCollator()
 
-model = AutoModelForQuestionAnswering.from_pretrained("distilbert-base-uncased", torchscript=True)
+model = AutoModelForQuestionAnswering.from_pretrained("distilbert-base-uncased")
 
 training_args = TrainingArguments(
-    output_dir="./checkpoints/",
+    output_dir=f"./{model_id}/checkpoints/",
     evaluation_strategy="epoch",
-    save_strategy="epoch",
+    save_strategy="no",
     learning_rate=2e-5,
     per_device_train_batch_size=16,
     per_device_eval_batch_size=16,
@@ -90,15 +95,23 @@ trainer = Trainer(
 )
 
 trainer.train()
+trainer.save_model(f"{model_id}/model/")
+print(f"HuggingFace model saved to '{model_id}/model'.")
+
+# Convert saved model to ONNX
+sys.argv = ["dummy_sysargs.py", f"--model={model_id}/model", "--feature=question-answering", f"{model_id}/onnx/question-answering/1/"]
+runpy.run_module("transformers.onnx", run_name="__main__")
 
 
-context = "Architecturally, the school has a Catholic character. Atop the Main Building\"s gold dome is a golden statue of the Virgin Mary. Immediately in front of the Main Building and facing it, is a copper statue of Christ with arms upraised with the legend \"Venite Ad Me Omnes\". Next to the Main Building is the Basilica of the Sacred Heart. Immediately behind the basilica is the Grotto, a Marian place of prayer and reflection. It is a replica of the grotto at Lourdes, France where the Virgin Mary reputedly appeared to Saint Bernadette Soubirous in 1858. At the end of the main drive (and in a direct line that connects through 3 statues and the Gold Dome), is a simple, modern stone statue of Mary."
-question = "To whom did the Virgin Mary allegedly appear in 1858 in Lourdes France?"
 
+# TORCHSCRIPT TEST - WORK IN PROGRESS
+# context = "Architecturally, the school has a Catholic character. Atop the Main Building\"s gold dome is a golden statue of the Virgin Mary. Immediately in front of the Main Building and facing it, is a copper statue of Christ with arms upraised with the legend \"Venite Ad Me Omnes\". Next to the Main Building is the Basilica of the Sacred Heart. Immediately behind the basilica is the Grotto, a Marian place of prayer and reflection. It is a replica of the grotto at Lourdes, France where the Virgin Mary reputedly appeared to Saint Bernadette Soubirous in 1858. At the end of the main drive (and in a direct line that connects through 3 statues and the Gold Dome), is a simple, modern stone statue of Mary."
+# question = "To whom did the Virgin Mary allegedly appear in 1858 in Lourdes France?"
 
-model.eval()
-model.to("cpu")
-inputs = dict(tokenizer(question, context, return_tensors="pt")).values()
-traced_model = torch.jit.trace(model, inputs)
-torch.jit.save(traced_model, "traced_model.pth")
+# model.eval()
+# model.to("cpu")
+# inputs = dict(tokenizer(question, context, return_tensors="pt")).values()
+# traced_model = torch.jit.trace(model, inputs)
+# torch.jit.save(traced_model, "traced_model.pth")
+
 
