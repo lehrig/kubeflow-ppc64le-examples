@@ -3,8 +3,14 @@
 
 import streamlit as st
 import requests
+from datetime import datetime
+from pandas import DataFrame
+
 import utils
 
+backends_list = ["Triton Inference Server", "TorchServe", "TFServing"]
+
+# Page config and CSS styling
 st.set_page_config(
         page_title="Kubeflow on Power",
         page_icon="https://raw.githubusercontent.com/kubeflow/kubeflow/master/components/centraldashboard/public/assets/favicon.ico",
@@ -12,6 +18,7 @@ st.set_page_config(
 
 st.markdown(utils.css, unsafe_allow_html=True)
 
+# Headers and columns
 st.title("Kubeflow on Power")
 st.header("Question Answering")
 
@@ -27,21 +34,48 @@ def answer():
     st.session_state.question = st.session_state.user_input
 
     st.session_state.answer = requests.post(
-            "http://localhost:5000/", 
+            "http://localhost:5000/predict", 
             json={"question": st.session_state.question, "backend": backend}).json()
 
     # reset question field
     st.session_state.user_input = ""
 
 
-with st.sidebar:
-    backend = st.selectbox("Backend server to use:",
-            ["TorchServe", "TFServing", "Triton Inference Server"])
+def get_backends_status():
+    st.session_state.backends_status = requests.post(
+            "http://localhost:5000/status",
+            json={"backends": backends_list}).json()
 
+
+with st.sidebar: ##############################################################################
+    backend = st.radio("Backend server to use:", backends_list)
+
+    mma_required = st.checkbox("Enable MMA", value=True, disabled=True)
     logs_required = st.checkbox("Show logs")
 
+    st.markdown("***")
 
-with left_column:
+    if "answer" in st.session_state and st.session_state.answer["status"] == "success":
+        st.metric("Inference time (in seconds)", round(st.session_state.answer["inference_time"], 3))
+    else:
+        st.metric("Inference time (in seconds)", None)
+    
+
+    st.markdown("***")
+
+    st.button("Check backends status", on_click=get_backends_status)
+
+
+    if "backends_status" in st.session_state:
+        df = DataFrame(
+                st.session_state.backends_status.items(), 
+                columns=["Backend", "Status"])
+        st.markdown(df.style.hide(axis="index").to_html(), unsafe_allow_html=True)
+
+
+
+
+with left_column: #############################################################################
 
     # create user text input for question
     st.text_input("", key="user_input", on_change=answer)
@@ -52,16 +86,18 @@ with left_column:
         if st.session_state.answer["status"] == "success":
             st.markdown(utils.user_component % st.session_state.question, unsafe_allow_html=True)
             st.markdown(utils.bot_component % st.session_state.answer["answer"], unsafe_allow_html=True)
-            st.info(f"Inference time: {st.session_state.answer['inference_time']}")
-        else:
+        elif st.session_state.answer["message"]:
             st.error(st.session_state.answer["message"])
 
+
 st.markdown("***")
+
 if logs_required and "answer" in st.session_state:
     st.json(st.session_state.answer)
 
-# Examples column
-with right_column:
+
+with right_column: ############################################################################
+
     examples = [
         "Where did Neil Armstrong study?",
         "When was Miles Davis born?",
@@ -77,5 +113,4 @@ with right_column:
 
     for example_id, example in enumerate(examples):
         st.button(example, on_click=set_question, args=(example_id,))
-
 
