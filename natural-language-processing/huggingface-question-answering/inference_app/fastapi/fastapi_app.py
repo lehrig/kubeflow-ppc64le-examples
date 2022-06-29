@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from fastapi import FastAPI, Request
+from typing import List
 from pydantic import BaseModel
 import uvicorn
 
@@ -70,7 +71,7 @@ class Data(BaseModel):
     question: str
     backend: str
 
-@app.post("/")
+@app.post("/predict")
 async def predict(data: Data):
     try:
         doc = nlp(data.question)
@@ -82,7 +83,7 @@ async def predict(data: Data):
                 return_tensors="np", truncation=True))
 
         start_time = time()
-        outputs = run_inference(inputs, data.backend)
+        outputs = run_inference(inputs, data.backend)["answer"]
         inference_time = time() - start_time
 
         return {
@@ -102,6 +103,14 @@ async def predict(data: Data):
             "status": "error",
             "message": repr(e)
         }
+
+
+class BackendList(BaseModel):
+    backends: List[str]
+
+@app.post("/status")
+def check_backends_status(backendlist: BackendList):
+    return {b: "KO" for b in backendlist.backends}
 
 
 if __name__ == "__main__":
