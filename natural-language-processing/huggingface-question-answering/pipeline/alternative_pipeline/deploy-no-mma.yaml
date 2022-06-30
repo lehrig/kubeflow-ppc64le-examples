@@ -44,7 +44,7 @@ implementation:
                   cpu: "1"
                   memory: 8Gi
       EOF
-      kubectl wait --for=condition=ready --timeout=600s inferenceservice/${model_name}
+      kubectl wait --for=condition=ready --timeout=600s inferenceservice/${model_name}-no-mma
       
     - {inputValue: Model Name}
     - {inputValue: Storage URI}
