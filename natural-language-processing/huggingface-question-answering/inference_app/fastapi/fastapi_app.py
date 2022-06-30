@@ -108,12 +108,11 @@ async def predict(data: Data):
 #     for b in backends_list.backends:
 #         try:
 #             assert(requests.get(ENDPOINTS[b]["status"]).status_code == 200)
-#             results[b] = "OK"
+#             results[b] = "✅"
 #         except:
-#             results[b] = "KO"
+#             results[b] = "❌"
 #     return results
-
+# >>>>>>> 1135550ef625b14aa4ecebe2d30f05426e3567cd
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)
-

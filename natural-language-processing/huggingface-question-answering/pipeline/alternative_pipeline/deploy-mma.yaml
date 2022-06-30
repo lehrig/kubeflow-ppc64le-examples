@@ -1,0 +1,52 @@
+name: Deploy Model with KServe - MMA
+inputs:
+- {name: Model Name, type: String, default: 'my-model', description: 'Name of the model. Must be unique for the targeted namespace and conform Kubernetes naming conventions. Example: my-model.'}
+- {name: Storage URI, type: String, default: 's3://models/onnx', description: 'The Storage URI of KServe where the model resides (typically in MinIO). Note that you have to point to the model root path, not a concrete version. Example: s3://models/onnx.'}
+metadata:
+  annotations:
+    author: Marvin Giessing <marving@de.ibm.com>
+implementation:
+  container:
+    image: quay.io/ibm/kubeflow-component-base-image-k8s-client:latest
+    command:
+    - bash
+    - -exc
+    - |
+      model_name=$0
+      storage_uri=$1
+      output_endpoint=$2
+      cat <<EOF | kubectl apply -f -
+      apiVersion: "serving.kserve.io/v1beta1"
+      kind: "InferenceService"
+      metadata:
+        name: "${model_name}-mma"
+        annotations:
+          sidecar.istio.io/inject: "false"
+      spec:
+        predictor:
+          nodeSelector:
+            mma: "true"
+          containers:
+            - name: triton
+              image: quay.io/mgiessing/tritonserver:22.06-py3
+              args:
+              - tritonserver
+              - --model-store=/mnt/models
+              - --http-port=8080
+              - --allow-http=true
+              - --strict-model-config=false
+              env:
+                - name: STORAGE_URI
+                  value: "pvc://models-volume/models"
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: 8Gi
+                requests:
+                  cpu: "1"
+                  memory: 8Gi
+      EOF
+      kubectl wait --for=condition=ready --timeout=600s inferenceservice/${model_name}-mma
+      
+    - {inputValue: Model Name}
+    - {inputValue: Storage URI}
