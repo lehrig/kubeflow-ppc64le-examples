@@ -49,10 +49,22 @@ def answer():
     st.session_state.user_input = ""
 
 
-# def get_backends_status():
-#     st.session_state.backends_status = requests.post(
-#             "http://localhost:5000/status",
-#             json={"backends": backends_list}).json()
+def check_backend_status():
+    if st.session_state.inference_url == "":
+        return
+    try:
+        res = requests.post(
+            "http://localhost:5000/predict",
+            json={
+                "question": "Where did Neil Armstrong study?",
+                "backend": backend,
+                "inference_url": st.session_state.inference_url
+            })
+        assert(res.status_code == 200)
+        st.session_state.backend_status = "✅"
+    except:
+        st.session_state.backend_status = "❌"
+
 
 
 
@@ -73,14 +85,10 @@ with st.sidebar: ###############################################################
 
     st.markdown("***")
 
-    # st.button("Check backends status", on_click=get_backends_status)
+    st.button("Check backend status", on_click=check_backend_status)
 
-
-    # if "backends_status" in st.session_state:
-    #     df = DataFrame(
-    #             st.session_state.backends_status.items(), 
-    #             columns=["Backend", "Status"])
-    #     st.markdown(df.style.hide(axis="index").to_html(), unsafe_allow_html=True)
+    if "backend_status" in st.session_state:
+        st.title(st.session_state.backend_status)
 
 
 
