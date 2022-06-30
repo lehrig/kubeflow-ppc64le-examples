@@ -14,22 +14,6 @@ from numpy import argmax
 from time import time
 import spacy
 import wikipedia
-
-def get_env(field, default=None):
-    return os.environ[field] if field in os.environ else default
-
-ENDPOINTS = {
-    "Triton Inference Server": {
-        "model":  get_env("TRITON_MODEL_ENDPOINT",  "http://localhost:8000/v2/models/question-answering/infer")
-        "status": get_env("TRITON_STATUS_ENDPOINT", "localhost:8000/v2/health/ready")
-    }, {
-    "TorchServe": {
-        "model":  None,
-        "status": None
-    "TFServing": {
-        "model":  None,
-        "status": None
-
     
 app = FastAPI()
 
@@ -44,7 +28,7 @@ def get_wikipedia_context(entity):
         return wikipedia.summary(e.options[0], auto_suggest=False)
 
 
-def run_inference(inputs, backend):
+def run_inference(inputs, backend, inference_url):
     if backend == "TorchServe":
         pass
     elif backend == "TFServing":
@@ -66,7 +50,7 @@ def run_inference(inputs, backend):
             ]
         }
 
-        response = requests.post(ENDPOINTS[backend]["model"], data=json.dumps(payload)).json()
+        response = requests.post(inference_url, data=json.dumps(payload)).json()
         return {
             "status": "success",
             "answer": {ent["name"]: argmax(ent["data"]) for ent in response["outputs"]}
@@ -79,6 +63,7 @@ def run_inference(inputs, backend):
 class Data(BaseModel):
     question: str
     backend: str
+    inference_url: str
 
 @app.post("/predict")
 async def predict(data: Data):
@@ -92,7 +77,7 @@ async def predict(data: Data):
                 return_tensors="np", truncation=True))
 
         start_time = time()
-        outputs = run_inference(inputs, data.backend)["answer"]
+        outputs = run_inference(inputs, data.backend, data.inference_url)["answer"]
         inference_time = time() - start_time
 
         return {
@@ -114,21 +99,19 @@ async def predict(data: Data):
         }
 
 
-class BackendList(BaseModel):
-    backends: List[str]
+# class BackendList(BaseModel):
+#     backends: List[str]
 
-@app.post("/status")
-def check_backends_status(backends_list: BackendList):
-    results = {}
-    for b in backends_list.backends:
-        try:
-            assert(requests.get(ENDPOINTS[b]["status"]).status_code == 200)
-            results[b] = "OK"
-        except:
-            results[b] = "KO"
-    return results
-
-    # return {b: "KO" for b in backends_list.backends}
+# @app.post("/status")
+# def check_backends_status(backends_list: BackendList):
+#     results = {}
+#     for b in backends_list.backends:
+#         try:
+#             assert(requests.get(ENDPOINTS[b]["status"]).status_code == 200)
+#             results[b] = "OK"
+#         except:
+#             results[b] = "KO"
+#     return results
 
 
 if __name__ == "__main__":

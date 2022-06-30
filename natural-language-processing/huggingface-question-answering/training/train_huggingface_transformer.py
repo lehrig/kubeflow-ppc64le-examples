@@ -88,8 +88,8 @@ training_args = TrainingArguments(
 trainer = Trainer(
     model=model,
     args=training_args,
-    train_dataset=tokenized_squad["train"],
-    eval_dataset=tokenized_squad["validation"],
+    train_dataset=tokenized_squad["train"].select(range(100)),
+    eval_dataset=tokenized_squad["validation"].select(range(100)),
     tokenizer=tokenizer,
     data_collator=data_collator,
 )

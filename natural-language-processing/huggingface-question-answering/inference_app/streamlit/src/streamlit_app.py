@@ -22,12 +22,16 @@ st.markdown(utils.css, unsafe_allow_html=True)
 st.title("Kubeflow on Power")
 st.header("Question Answering")
 
+st.text_input("Inference service URL:", key="inference_url")
+
+st.markdown("***")
+
 left_column, right_column = st.columns(2)
 
 
 def answer():
-    # if empty submit, do nothing
-    if st.session_state.user_input == "":
+    # if empty URL or input, do nothing
+    if st.session_state.user_input == "" or st.session_state.inference_url == "":
         return
 
     # store question and answer to be displayed later (under text input)
@@ -35,16 +39,22 @@ def answer():
 
     st.session_state.answer = requests.post(
             "http://localhost:5000/predict", 
-            json={"question": st.session_state.question, "backend": backend}).json()
+            json={
+                "question": st.session_state.question, 
+                "backend": backend,
+                "inference_url": st.session_state.inference_url}
+    ).json()
 
     # reset question field
     st.session_state.user_input = ""
 
 
-def get_backends_status():
-    st.session_state.backends_status = requests.post(
-            "http://localhost:5000/status",
-            json={"backends": backends_list}).json()
+# def get_backends_status():
+#     st.session_state.backends_status = requests.post(
+#             "http://localhost:5000/status",
+#             json={"backends": backends_list}).json()
+
+
 
 
 with st.sidebar: ##############################################################################
@@ -63,14 +73,14 @@ with st.sidebar: ###############################################################
 
     st.markdown("***")
 
-    st.button("Check backends status", on_click=get_backends_status)
+    # st.button("Check backends status", on_click=get_backends_status)
 
 
-    if "backends_status" in st.session_state:
-        df = DataFrame(
-                st.session_state.backends_status.items(), 
-                columns=["Backend", "Status"])
-        st.markdown(df.style.hide(axis="index").to_html(), unsafe_allow_html=True)
+    # if "backends_status" in st.session_state:
+    #     df = DataFrame(
+    #             st.session_state.backends_status.items(), 
+    #             columns=["Backend", "Status"])
+    #     st.markdown(df.style.hide(axis="index").to_html(), unsafe_allow_html=True)
 
 
 
