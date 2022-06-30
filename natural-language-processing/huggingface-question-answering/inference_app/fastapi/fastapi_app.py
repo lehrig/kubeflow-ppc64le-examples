@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from typing import List
 from pydantic import BaseModel
 import uvicorn
@@ -50,10 +50,10 @@ def run_inference(inputs, backend, inference_url):
             ]
         }
 
-        response = requests.post(inference_url, data=json.dumps(payload)).json()
+        res = requests.post(inference_url, data=json.dumps(payload)).json()
         return {
             "status": "success",
-            "answer": {ent["name"]: argmax(ent["data"]) for ent in response["outputs"]}
+            "answer": {ent["name"]: argmax(ent["data"]) for ent in res["outputs"]}
         }
 
     raise NotImplementedError(f"Backend '{backend}' not supported.")
@@ -65,12 +65,12 @@ class Data(BaseModel):
     backend: str
     inference_url: str
 
-@app.post("/predict")
-async def predict(data: Data):
+@app.post("/predict", status_code=200)
+async def predict(data: Data, response: Response):
     try:
         doc = nlp(data.question)
         if len(doc.ents) == 0:
-            raise ValueError("Spacy did not find any entity in the question '{data.question}'.")
+            raise ValueError(f"Spacy did not find any entity in the question '{data.question}'.")
 
         context = get_wikipedia_context(doc.ents[0].text)
         inputs = dict(tokenizer(data.question, context,
@@ -93,26 +93,12 @@ async def predict(data: Data):
             "entities": [(ent.text, ent.label_) for ent in doc.ents]
         }
     except Exception as e:
+        response.status_code = 500
         return {
             "status": "error",
             "message": repr(e)
         }
 
-
-# class BackendList(BaseModel):
-#     backends: List[str]
-
-# @app.post("/status")
-# def check_backends_status(backends_list: BackendList):
-#     results = {}
-#     for b in backends_list.backends:
-#         try:
-#             assert(requests.get(ENDPOINTS[b]["status"]).status_code == 200)
-#             results[b] = "✅"
-#         except:
-#             results[b] = "❌"
-#     return results
-# >>>>>>> 1135550ef625b14aa4ecebe2d30f05426e3567cd
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)
