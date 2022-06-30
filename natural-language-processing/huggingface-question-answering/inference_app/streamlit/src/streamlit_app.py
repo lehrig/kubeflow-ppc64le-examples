@@ -132,3 +132,5 @@ with right_column: #############################################################
     for example_id, example in enumerate(examples):
         st.button(example, on_click=set_question, args=(example_id,))
 
+print(st.session_state)
+print()
