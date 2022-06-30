@@ -5,6 +5,7 @@ import streamlit as st
 import requests
 from datetime import datetime
 from pandas import DataFrame
+import logging as log
 
 import utils
 
@@ -96,7 +97,7 @@ with st.sidebar: ###############################################################
 with left_column: #############################################################################
 
     # create user text input for question
-    st.text_input("", key="user_input", on_change=answer)
+    st.text_input("", key="user_input")#, on_change=answer)
     st.button("Submit", on_click=answer)
 
     # display results (only when answer exists, so after the first run)
@@ -134,5 +135,4 @@ with right_column: #############################################################
     for example_id, example in enumerate(examples):
         st.button(example, on_click=set_question, args=(example_id,))
 
-print(st.session_state)
-print()
+log.info(st.session_state)
