@@ -73,7 +73,7 @@ def check_backend_status():
 with st.sidebar: ##############################################################################
     backend = st.radio("Backend server to use:", backends_list)
 
-    mma_required = st.checkbox("Enable MMA", value=True, disabled=True)
+    # mma_required = st.checkbox("Enable MMA", value=True, disabled=True)
     logs_required = st.checkbox("Show logs")
 
     st.markdown("***")
