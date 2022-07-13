@@ -100,17 +100,17 @@ TODO
 
 # Contacts
 
-[Jeremie Chheang](mailto:jeremie.chheang@ibm.com)
-MLOps Intern
-IBM Client Engineering for Systems | EMEA
+[Jeremie Chheang](mailto:jeremie.chheang@ibm.com)<br />
+MLOps Intern<br />
+IBM Client Engineering for Systems | EMEA<br />
 Montpellier, France
 
-[Maxime Deloche](mailto:maxime.deloche1@ibm.com)
-Deep Learning Engineer
-IBM Client Engineering for Systems | EMEA
+[Maxime Deloche](mailto:maxime.deloche1@ibm.com)<br />
+Deep Learning Engineer<br />
+IBM Client Engineering for Systems | EMEA<br />
 Montpellier, France
 
-[Marvin Gießing](marving@de.ibm.com)
-AI & Red Hat Openshift Systems Architect
-IBM Technology Sales, DACH
+[Marvin Gießing](marving@de.ibm.com)<br />
+AI & Red Hat Openshift Systems Architect<br />
+IBM Technology Sales, DACH<br />
 Frankfurt, Germany
