@@ -3,7 +3,6 @@
 
 For more information, please see the [related IBM TechZone asset](https://techzone.ibm.com/collection/ai-inference-mma-and-kubeflow).
 
----
 
 ## Folder content
 
@@ -16,13 +15,21 @@ For more information, please see the [related IBM TechZone asset](https://techzo
 	* `deploy-mma.yaml` and `deploy-no-mma.yaml`: YAML files for deploying the MMA and non-MMA model serving containers (based on KServe)
 * `training/train_huggingface_transformer.py`: Python source code of the training script used in the Kubeflow pipeline (allowing to generated the ONNX trained model without Kubeflow)
 
----
 
 # AI model
 
-TODO
+The Deep Learning model used is a [DistilBERT](https://huggingface.co/docs/transformers/model_doc/distilbert) Transformer model from the [HuggingFace](https://huggingface.co/docs/transformers/index) library.
 
----
+We fine-tune it for a question-answering use case on the [SQuAD dataset](https://rajpurkar.github.io/SQuAD-explorer/).
+This type of task means that the model takes a "question" and a "context" as input, and returns the answer of the question in the context.
+
+The source code used is inspired by:
+
+* https://huggingface.co/docs/transformers/main/en/tasks/question_answering
+* https://colab.research.google.com/github/huggingface/notebooks/blob/main/examples/question_answering.ipynb
+
+In this demo, we want the user to provide the question only. We implemented a "context retrieval" part that first use [spaCy](https://spacy.io/) to extract the entity in the question, then the [Wikipedia API](https://pypi.org/project/wikipedia/) and Python wrapper to fetch a summary associated with that entity.
+
 
 # Web application
 
@@ -85,18 +92,11 @@ Then, you can launch a new build and automatically push the image with:
 oc start-build <myapp> --from-dir=. --follow
 ```
 
----
 
 # Kubeflow Pipeline
 
 TODO
 
----
-
-# Sources
-
-* https://huggingface.co/docs/transformers/main/en/tasks/question_answering
-* https://colab.research.google.com/github/huggingface/notebooks/blob/main/examples/question_answering.ipynb
 
 # Contacts
 
