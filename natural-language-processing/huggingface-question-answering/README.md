@@ -182,6 +182,7 @@ The model can be run using Kubeflow Pipelines, a tool that manages ML workflows.
 In this example, we split the workflow into five components: Loading the dataset, pre-processing, training, deploy and serve using MMA or without MMA. Some components are created and some are loaded from existing YAML files. 
 
 A Kubeflow component can be created using <code>kfp.components.create_component_from_func(func, output_file, base_image)</code>. The base image creates an environment that has the required packages to run your function. For this reason, imports of modules that are required in the function must be written inside the function as everything that is outside the function is also outside the component. The output_file is a yaml file that contains your function and the base_image so that it can be saved and reused if needed.
+![Component example](images/load_dataset.PNG)
 
 Functions can specify inputs and outputs using <code>kfp.components.InputPath(<type>)</code> and <code>kfp.components.OutputPath(<type>)</code>. What is saved in an OutputPath of a component can be retrieved by another component.
 
