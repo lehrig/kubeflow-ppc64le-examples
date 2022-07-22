@@ -175,10 +175,17 @@ oc start-build <myapp> --from-dir=. --follow
 ```
 
 
-# Kubeflow Pipeline
+# Kubeflow Pipelines
 
-TODO
+The model can be run using Kubeflow Pipelines, a tool that manages ML workflows. In this framework, the model is cut into components that correspond to each step of the workflow, e.g. loading the dataset, feature search, training, evaluation etc. The components are containers that are run sequentially and communicate with each others through an input and output system. The idea is to foster transparency and reusability of the components, but also to benefit from the numerous libraries/other tools that can work with Kubeflow, such as Tensorboard, Katib and Spark for example.
 
+In this example, we split the workflow into five components: Loading the dataset, pre-processing, training, deploy and serve using MMA or without MMA. Some components are created and some are loaded from existing YAML files. 
+
+A Kubeflow component can be created with <code>kfp.components.create_component_from_func(func, output_file, base_image)</code>. The base image creates an environment that has the required packages to run you function. For this reason, imports of modules that are required in the function must be written inside the function as everything that is outside the function is also outside the component. The output_file is a yaml file that contains your function and the base_image so that it can be saved and reused if needed.
+
+Functions can specify inputs and outputs using <code>kfp.components.InputPath(<type>)</code> and <code>kfp.components.OutputPath(<type>)</code>. What is saved in an OutputPath of a component can be retrieved by another component.
+
+At the end, the pipeline function is defined. It creates tasks from components and links the different inputs and outputs of the components.
 
 # Contacts
 
