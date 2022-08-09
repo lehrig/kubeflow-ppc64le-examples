@@ -1,0 +1,54 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: question-answering-app
+  labels:
+    app: question-answering
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: question-answering
+  template:
+    metadata:
+      labels:
+        app: question-answering
+    spec:
+      containers:
+      - name: streamlit
+        image: quay.io/mdeloche/kubeflow-streamlit:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8501
+      - name: fastapi
+        image: quay.io/mdeloche/kubeflow-fastapi:1.0
+        imagePullPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: question-answering-svc
+  labels:
+    app: question-answering
+spec:
+  selector:
+    app: question-answering
+  ports:
+  - nodePort: 0
+    port: 8501
+    protocol: TCP
+    targetPort: 8501
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: question-answering-route
+  labels:
+    app: question-answering
+spec:
+  host: kubeflow-demo.apps.ruby.edu.ihost.com
+  port:
+    targetPort: 8501
+  to:
+    kind: Service
+    name: question-answering-svc
