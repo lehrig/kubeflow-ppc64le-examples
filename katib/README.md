@@ -1,3 +1,5 @@
+# How to run a Katib experiment with Kubeflow Pipelines
+
 Katib is a framework native to Kubernetes that also works with RedHat Openshift. Its purpose is to tune hyperparameters. \
 The idea is to create a YAML file that contains:
 - The parameters of the model
