@@ -1,0 +1,61 @@
+---
+apiVersion: kubeflow.org/v1beta1
+kind: Experiment
+metadata:
+  namespace: jeremie-chheang-ibm-com
+  name: file-metrics-collector
+spec:
+  objective:
+    type: minimize
+    goal: 1
+    objectiveMetricName: loss
+  metricsCollectorSpec:
+    source:
+      fileSystemPath:
+        path: "/tmp/output.txt"
+        kind: File
+    collector:
+      kind: File
+  algorithm:
+    algorithmName: random
+  parallelTrialCount: 3
+  maxTrialCount: 6
+  maxFailedTrialCount: 3
+  parameters:
+    - name: epochs
+      parameterType: int
+      feasibleSpace:
+        min: "1"
+        max: "2"
+    - name: initlr
+      parameterType: double
+      feasibleSpace:
+        min: "0.3"
+        max: "0.4"
+  trialTemplate:
+    primaryContainerName: training-container
+    trialParameters:
+      - name: learningRate
+        description: Learning rate for the training model
+        reference: initlr
+      - name: Epochs
+        description: Momentum for the training model
+        reference: epochs
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        template:
+          metadata:
+            annotations:
+              sidecar.istio.io/inject: "false"
+          spec:
+            containers:
+              - name: training-container
+                image: quay.io/jeremie_ch/bert_model:latest
+                command:
+                  - "python"
+                  - "/opt/bert_model.py"
+                  - "--epochs=${trialParameters.Epochs}"
+                  - "--initlr=${trialParameters.learningRate}"  
+            restartPolicy: Never
